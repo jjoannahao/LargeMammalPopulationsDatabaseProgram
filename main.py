@@ -19,15 +19,36 @@ def getFileContent(filename) -> list:
     text_list = file.readlines()
     file.close()
     # --- clean up data
-    data_list = []
     # already split by \n
-    for i in range(len(text_list)):
+    for i in range(len(text_list)):  # reading individual lines of strings from file
         # now working w a string
-
-        # assuming not all rows have \n (often true for last row)
         if text_list[i][-1] == "\n":  # \n considered 1 char
+            # assuming not all rows have \n (often true for last row)
             text_list[i] = text_list[i][:-1]  # to make one long string
 
+        if '"' not in text_list[i]:  # nice data
+            text_list[i] = text_list[i].split(",")
+        else:
+            text_list[i] = text_list[i].split('"')
+            # text_list[i] = text_list[i].split(",")
+
+        # remove "," from start of last item in row of comment w/ quote
+        for j in range(len(text_list[i])):  # reading each item in the first split lists
+            if text_list[i][j].isnumeric():  # working w/ a string (list already split)
+                text_list[i][j] = int(text_list[i][j])
+            elif text_list[i][-1][0] == ',':
+                text_list[i][j] = text_list[i][1:]
+
+        # split by another char first then comma
+        # text_list[i].split('"')  # " only present in comments when comments contain comma; othewise comments have no quotes around
+        # text_list
+        #
+        # print(text_list[i])
+        # text_list[i].split(',')
+        # print(text_list[i])
+
+        """
+        # then identify if you can split by commas
         text_list[i].split(",")
 
         for j in range(len(text_list[i])):
@@ -35,7 +56,7 @@ def getFileContent(filename) -> list:
                 text_list[i][j] = int(text_list[i][j])
             if text_list[i][j] == '"':
                 text_list[i][j] = "#"
-
+        """
     return text_list
 
 
@@ -84,7 +105,8 @@ if __name__ == "__main__":
     #if FIRST_RUN:
     # setup everything
     CONTENT = getFileContent("Elk_Island_NP_Grassland_Forest_Ungulate_Population_1906-2017_data_reg.csv")
-    print(CONTENT)
+    for i in range(len(CONTENT)):
+        print(CONTENT[i])
 
     """
     while True:
