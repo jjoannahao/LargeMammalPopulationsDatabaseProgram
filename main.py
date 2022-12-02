@@ -55,6 +55,34 @@ Please choose an option:
     return int(input("> "))
 
 
+def getPopulationGrowthInputs():
+    start_year = input("Start year? ")
+    end_year = input("End year? ")
+    species = input("Bison (1), Elk (2), Moose (3), Deer (4), or all (5)? ")
+    return start_year, end_year, species
+
+
+def getNewYearData():
+    park_area = input("Area of park? ")
+    population_year = input("Population year? ")
+    survey_year = input("Survey year? ")
+    survey_month = input("Survey month? ")
+    survey_day = input("Survey day? ")
+    species = input("Species name? ")
+    unknown_age_sex_count = input("Number of animals with unknown age and sex? ")
+    adult_male = input("Number of adult males? ")
+    adult_female = input("Number of adult females? ")
+    unknown_adult_count = input("Number of adults of unknown sex? ")
+    yearling_count = input("Number of yearlings? ")
+    calf_count = input("Number of calves? ")
+    survey_total = input("Survey total? ")
+    sightability_correction_factor = input("Sightability correction factor? ")
+    extra_captives = input("Number of additional captives? ")
+    animals_removed = input("Number of animals removed prior to survey? ")
+    fall_population = input("Estimate of fall population? ")
+    comment = input("Survey comment: ")  # need to put quotes around if ',' inside
+    method = input("Estimate method? ")
+
 # --- Processing
 def setupContent(list_data):
     global CURSOR, CONNECTION
@@ -95,18 +123,6 @@ def setupContent(list_data):
     CONNECTION.commit()
 
 
-# def setupBison(list_data):
-#     global CURSOR, CONNECTION
-#
-#
-# def setupMoose(list_data):
-#     global CURSOR, CONNECTION
-#
-#
-# def setupDeer(list_data):
-#     global CURSOR, CONNECTION
-
-
 # --- Outputs
 
 
@@ -130,7 +146,6 @@ if __name__ == "__main__":
     # for i in range(len(CONTENT)):
     #     print(CONTENT[i])
 
-    """
     while True:
         # --- inputs
         CHOICE = menu()
@@ -158,4 +173,6 @@ if __name__ == "__main__":
         elif CHOICE == 3:
             print("Goodbye!")
             exit()
-        """
+
+# check ability to exclude newly added data --> without affecting previous data calculations?
+
