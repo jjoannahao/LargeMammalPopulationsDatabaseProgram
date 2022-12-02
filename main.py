@@ -25,7 +25,7 @@ def getFileContent(filename) -> list:
 
         if '"' not in text_list[i]:  # nice data
             text_list[i] = text_list[i].split(",")
-        else:  # disgarsting data
+        else:
             text_list[i] = text_list[i].split('"')  # to offset a survey comment containing a comma -->
             text_list[i][0] = text_list[i][0].split(",")  # becomes 2D array (split non-survey comment items nicely by ","s)
             text_list[i][-1] = text_list[i][-1].replace(",", "")
@@ -46,6 +46,7 @@ def getFileContent(filename) -> list:
 
 
 def menu() -> int:
+    # print("Welcome to the Elk Island National Park Large Mammal population database! ")
     print("""
 Please choose an option:
 1. Search Population Growth
@@ -63,28 +64,79 @@ def getPopulationGrowthInputs():
 
 
 def getNewYearData():
-    park_area = input("Area of park? ")
-    population_year = input("Population year? ")
+    print("""
+NOTE:
+    Some data is required while some isn't. 
+    For questions without the required (R) symbol, you can leave the field blank if there's no data.
+    """)
+    park_area = input("Area of park? (R) ")
+    dataValidationBlanks(park_area)
+    population_year = input("Population year? (R) ")
+    dataValidationBlanks(population_year)
+    population_year = int(population_year)
+    if population_year >= 1905 and population_year <= 2017:
+        print("Population year data already exists.")
+        return getNewYearData()
     survey_year = input("Survey year? ")
-    survey_month = input("Survey month? ")
-    survey_day = input("Survey day? ")
-    species = input("Species name? ")
+    dataValidationInts(survey_year)
+    survey_month = input("Survey month? (1-12) ")
+    dataValidationSurveyDate(survey_month, 1, 12)
+    survey_day = input("Survey day? (1-31) ")
+    dataValidationSurveyDate(survey_day, 1, 31)
+    species = input("Species name? (R) ")
+    dataValidationBlanks(species)
     unknown_age_sex_count = input("Number of animals with unknown age and sex? ")
+    dataValidationInts(unknown_age_sex_count)
     adult_male = input("Number of adult males? ")
+    dataValidationInts(adult_male)
     adult_female = input("Number of adult females? ")
+    dataValidationInts(adult_male)
     unknown_adult_count = input("Number of adults of unknown sex? ")
+    dataValidationInts(unknown_adult_count)
     yearling_count = input("Number of yearlings? ")
+    dataValidationInts(yearling_count)
     calf_count = input("Number of calves? ")
+    dataValidationInts(calf_count)
     survey_total = input("Survey total? ")
+    dataValidationInts(survey_total)
     sightability_correction_factor = input("Sightability correction factor? ")
+    dataValidationInts(sightability_correction_factor)
     extra_captives = input("Number of additional captives? ")
+    dataValidationInts(extra_captives)
     animals_removed = input("Number of animals removed prior to survey? ")
+    dataValidationInts(animals_removed)
     fall_population = input("Estimate of fall population? ")
+    dataValidationInts(fall_population)
     comment = input("Survey comment: ")  # need to put quotes around if ',' inside
+    if "," in comment:
+        comment = '"' + comment + '"'
     method = input("Estimate method? ")
 
+    return [park_area, population_year, survey_year, survey_month, survey_day, species, unknown_age_sex_count, adult_male, adult_female, unknown_adult_count, yearling_count, calf_count, survey_total, sightability_correction_factor, extra_captives, animals_removed, fall_population, comment, method]
+
+
 # --- Processing
-def setupContent(list_data):
+def dataValidationSurveyDate(variable, lower_bound, upper_bound):
+    if variable.isnumeric():
+        variable = int(variable)
+        if variable < lower_bound or variable > upper_bound:
+            print(f"Please enter a valid {variable}.")
+            return getNewYearData()
+
+
+def dataValidationInts(variable):
+    if variable.isnumeric():
+        return int(variable)
+    return None
+
+
+def dataValidationBlanks(variable):
+    if variable == "":
+        print(f"{variable} can't be left blank.")
+        return getNewYearData()
+
+
+def setupContent(data_list):
     global CURSOR, CONNECTION
     CURSOR.execute("""
         CREATE TABLE
@@ -110,7 +162,12 @@ def setupContent(list_data):
                 estimate_method TEXT
             )
     ;""")
+    insertData(data_list)
+    CONNECTION.commit()
 
+
+def insertData(list_data):
+    global CURSOR, CONNECTION
     for i in range(1, len(list_data)):
         CURSOR.execute("""
             INSERT INTO
@@ -119,7 +176,6 @@ def setupContent(list_data):
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
         ;""", list_data[i])
-
     CONNECTION.commit()
 
 
@@ -143,36 +199,28 @@ if __name__ == "__main__":
         CONTENT = getFileContent("Elk_Island_NP_Grassland_Forest_Ungulate_Population_1906-2017_data_reg.csv")
         setupContent(CONTENT)
 
-    # for i in range(len(CONTENT)):
-    #     print(CONTENT[i])
-
     while True:
+        print("Welcome to the Elk Island National Park Large Mammal population database! ")  # potential duplicate that could be in menu
         # --- inputs
         CHOICE = menu()
         if CHOICE == 1:
-            # START_YEAR =
-            # END_YEAR =
-            # ANIMALS_SEARCHED =
-            pass
+            START_YEAR, END_YEAR, SPECIES = getPopulationGrowthInputs()
         elif CHOICE == 2:
-            # YEAR =
-            # ANIMALS_TO_ADD =
-            pass
+            NEW_DATA = getNewYearData()
 
         # --- processing
         if CHOICE == 1:
             pass
         elif CHOICE == 2:
-            pass
+            insertData(NEW_DATA)
 
         # --- outputs
         if CHOICE == 1:
             pass
         elif CHOICE == 2:
-            print("successfully added (or sum like this)")
+            print(f"Successfully added {NEW_DATA[1]} data.")
         elif CHOICE == 3:
             print("Goodbye!")
             exit()
 
 # check ability to exclude newly added data --> without affecting previous data calculations?
-
