@@ -41,7 +41,6 @@ def getFileContent(filename) -> list:
                 text_list[i][j] = int(text_list[i][j])
             elif text_list[i][j] == "NA":
                 text_list[i][j] = ""
-
     return text_list
 
 
@@ -60,79 +59,82 @@ def getPopulationGrowthInputs():
     start_year = input("Start year? ")
     end_year = input("End year? ")
     species = input("Bison (1), Elk (2), Moose (3), Deer (4), or all (5)? ")
-    return start_year, end_year, species
+    if not (start_year.isnumeric() or end_year.isnumeric() or species.isnumeric()):
+        print("Please only enter valid numbers.")
+        return getPopulationGrowthInputs()
+    return int(start_year), int(end_year), int(species)
 
 
 def getNewYearData():
     print("""
 NOTE:
     Some data is required while some isn't. 
-    For questions without the required (R) symbol, you can leave the field blank if there's no data.
+    For questions without the required (R) symbol, leave the field blank if there's no data.
     """)
     park_area = input("Area of park? (R) ")
     dataValidationBlanks(park_area)
     population_year = input("Population year? (R) ")
     dataValidationBlanks(population_year)
-    population_year = int(population_year)
+    population_year = dataValidationInts(population_year)
     if population_year >= 1905 and population_year <= 2017:
         print("Population year data already exists.")
         return getNewYearData()
     survey_year = input("Survey year? ")
-    dataValidationInts(survey_year)
-    survey_month = input("Survey month? (1-12) ")
-    dataValidationSurveyDate(survey_month, 1, 12)
-    survey_day = input("Survey day? (1-31) ")
-    dataValidationSurveyDate(survey_day, 1, 31)
+    survey_month = dataValidationSurveyDate(input("Survey month? (1-12) "), 1, 12)
+    survey_day = dataValidationSurveyDate(input("Survey day? (1-31) "), 1, 31)
     species = input("Species name? (R) ")
     dataValidationBlanks(species)
     unknown_age_sex_count = input("Number of animals with unknown age and sex? ")
-    dataValidationInts(unknown_age_sex_count)
     adult_male = input("Number of adult males? ")
-    dataValidationInts(adult_male)
     adult_female = input("Number of adult females? ")
-    dataValidationInts(adult_male)
     unknown_adult_count = input("Number of adults of unknown sex? ")
-    dataValidationInts(unknown_adult_count)
     yearling_count = input("Number of yearlings? ")
-    dataValidationInts(yearling_count)
     calf_count = input("Number of calves? ")
-    dataValidationInts(calf_count)
     survey_total = input("Survey total? ")
-    dataValidationInts(survey_total)
     sightability_correction_factor = input("Sightability correction factor? ")
-    dataValidationInts(sightability_correction_factor)
     extra_captives = input("Number of additional captives? ")
-    dataValidationInts(extra_captives)
     animals_removed = input("Number of animals removed prior to survey? ")
-    dataValidationInts(animals_removed)
-    fall_population = input("Estimate of fall population? ")
-    dataValidationInts(fall_population)
+    fall_population = input("Estimate of fall population? (R) ")
     comment = input("Survey comment: ")  # need to put quotes around if ',' inside
     if "," in comment:
         comment = '"' + comment + '"'
     method = input("Estimate method? ")
 
-    return [park_area, population_year, survey_year, survey_month, survey_day, species, unknown_age_sex_count, adult_male, adult_female, unknown_adult_count, yearling_count, calf_count, survey_total, sightability_correction_factor, extra_captives, animals_removed, fall_population, comment, method]
+    new_data = [park_area, population_year, survey_year, survey_month, survey_day, species, unknown_age_sex_count, adult_male, adult_female, unknown_adult_count, yearling_count, calf_count, survey_total, sightability_correction_factor, extra_captives, animals_removed, fall_population, comment, method]
+    print(new_data)
+    for i in range(len(new_data)):
+        if new_data[i] == "":
+            new_data[i] = None
+        elif new_data[i].isnumeric():
+            new_data[i] = int(new_data[i])
+    return new_data
 
 
 # --- Processing
 def dataValidationSurveyDate(variable, lower_bound, upper_bound):
-    if variable.isnumeric():
+    if variable == "":
+        variable = None
+        return variable
+    elif variable.isnumeric():
         variable = int(variable)
         if variable < lower_bound or variable > upper_bound:
-            print(f"Please enter a valid {variable}.")
+            print(f"Please enter a valid number.")
             return getNewYearData()
+    else:
+        print("Please only enter numbers.")
 
 
 def dataValidationInts(variable):
     if variable.isnumeric():
         return int(variable)
-    return None
+    else:
+        print("Please enter a valid number")
+        return getNewYearData()
 
 
 def dataValidationBlanks(variable):
     if variable == "":
-        print(f"{variable} can't be left blank.")
+        print("This field can't be left blank.")
         return getNewYearData()
 
 
@@ -157,7 +159,7 @@ def setupContent(data_list):
                 sightability_correction_factor INTEGER,
                 additional_captive_count INTEGER,
                 animals_removed_before_survey INTEGER,
-                fall_population_estimate INTEGER,
+                fall_population_estimate INTEGER NOT NULL,
                 survey_comment TEXT,
                 estimate_method TEXT
             )
@@ -179,6 +181,47 @@ def insertData(list_data):
     CONNECTION.commit()
 
 
+def getSpeciesPopulationData(year, species):
+    # for specific species
+    global CURSOR
+    year_data = CURSOR.execute("""
+        SELECT
+            fall_population_estimate
+        FROM
+            populations
+        WHERE
+            population_year = ?
+                AND
+            species = ?
+    ;""", [year, species]).fetchall()
+
+    year_total = 0
+    for i in range(len(year_data)):
+        for j in range(len(year_data[i])):
+            year_total += year_data[i][j]
+    return year_total
+
+
+def getPopulationsData(year):
+    # for all species
+    global CURSOR, CONNECTION
+    year_data = CURSOR.execute("""
+        SELECT
+            fall_population_estimate
+        FROM
+            populations
+        WHERE
+            population_year = ?
+    ;""", [year]).fetchall()
+
+    print(year_data)
+
+    year_total = 0
+    # for i in range(len(year_data)):
+    #     year_total += year_data[i]
+    # return year_total
+
+
 # --- Outputs
 
 
@@ -191,6 +234,8 @@ if (pathlib.Path.cwd() / DATABASE_FILE).exists():
 
 CONNECTION = sqlite3.connect(DATABASE_FILE)
 CURSOR = CONNECTION.cursor()
+
+SPECIES_OPTIONS = {1: "Bison", 2: "Elk", 3: "Moose", 4: "Deer"}
 
 if __name__ == "__main__":
     # ----- MAIN PROGRAM CODE ----- #
@@ -210,17 +255,29 @@ if __name__ == "__main__":
 
         # --- processing
         if CHOICE == 1:
-            pass
+            if SPECIES == 5:
+                START_POPULATION = getPopulationsData(START_YEAR)
+                END_POPULATION = getPopulationsData(END_YEAR)
+                POPULATION_CHANGE = abs(START_POPULATION - END_POPULATION)
+                TIME_CHANGE = abs(START_YEAR - END_YEAR)
+                GROWTH = POPULATION_CHANGE/TIME_CHANGE
+            else:
+                SPECIES = SPECIES_OPTIONS[SPECIES]
+                START_POPULATION = getSpeciesPopulationData(START_YEAR, SPECIES)
+                END_POPULATION = getSpeciesPopulationData(END_YEAR, SPECIES)
+                POPULATION_CHANGE = START_POPULATION - END_POPULATION
+                TIME_CHANGE = START_YEAR - END_YEAR
+                GROWTH = POPULATION_CHANGE / TIME_CHANGE
+                if int(GROWTH) == GROWTH:
+                    GROWTH = int(GROWTH)
         elif CHOICE == 2:
             insertData(NEW_DATA)
 
         # --- outputs
         if CHOICE == 1:
-            pass
+            print(f"The growth rate of {SPECIES} between {START_YEAR} and {END_YEAR} is {GROWTH} {SPECIES}/year.")
         elif CHOICE == 2:
             print(f"Successfully added {NEW_DATA[1]} data.")
         elif CHOICE == 3:
             print("Goodbye!")
             exit()
-
-# check ability to exclude newly added data --> without affecting previous data calculations?
