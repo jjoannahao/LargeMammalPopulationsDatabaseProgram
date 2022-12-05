@@ -66,54 +66,62 @@ def getPopulationGrowthInputs():
 
 
 def getNewYearData():
-    print("""
-NOTE:
-    Some data is required while some isn't. 
-    For questions without the required (R) symbol, leave the field blank if there's no data.
-    """)
-    park_area = input("Area of park? (R) ")
-    dataValidationBlanks(park_area)
-    population_year = input("Population year? (R) ")
-    dataValidationBlanks(population_year)
-    population_year = dataValidationInts(population_year)
-    if population_year >= 1905 and population_year <= 2017:
-        print("Population year data already exists.")
-        return getNewYearData()
-    survey_year = input("Survey year? ")
-    survey_month = dataValidationSurveyDate(input("Survey month? (1-12) "), 1, 12)
-    survey_day = dataValidationSurveyDate(input("Survey day? (1-31) "), 1, 31)
-    species = input("Species name? (R) ")
-    dataValidationBlanks(species)
-    unknown_age_sex_count = input("Number of animals with unknown age and sex? ")
-    adult_male = input("Number of adult males? ")
-    adult_female = input("Number of adult females? ")
-    unknown_adult_count = input("Number of adults of unknown sex? ")
-    yearling_count = input("Number of yearlings? ")
-    calf_count = input("Number of calves? ")
-    survey_total = input("Survey total? ")
-    sightability_correction_factor = input("Sightability correction factor? ")
-    extra_captives = input("Number of additional captives? ")
-    animals_removed = input("Number of animals removed prior to survey? ")
-    fall_population = input("Estimate of fall population? (R) ")
-    comment = input("Survey comment: ")  # need to put quotes around if ',' inside
-    if "," in comment:
-        comment = '"' + comment + '"'
-    method = input("Estimate method? ")
+    while True:
+        print("""
+    NOTE:
+        Some data is required while some isn't. 
+        For questions without the required (R) symbol, leave the field blank if there's no data.
+        """)
+        park_area = input("Area of park? (R) ")
+        if park_area not in ("North", "South"):
+            print("Field cannot be left blank. Please only enter the appropriate text. (North/South)")
+            continue
+        population_year = input("Population year? (R) ")
+        if population_year == "" or not population_year.isnumeric():
+            print("Field cannot be left blank. Please only enter numbers.")
+            continue
+        survey_year = input("Survey year? ")
+        survey_month = input("Survey month? (1-12) ")
+        survey_day = input("Survey day? (1-31) ")
+        species = input("Species name? (R) ")
+        if species == "" or species.isnumeric():
+            print("Field cannot be left blank. Please only enter the appropriate text.")
+            continue
+        species = species.capitalize()
+        unknown_age_sex_count = input("Number of animals with unknown age and sex? ")
+        adult_male = input("Number of adult males? ")
+        adult_female = input("Number of adult females? ")
+        unknown_adult_count = input("Number of adults of unknown sex? ")
+        yearling_count = input("Number of yearlings? ")
+        calf_count = input("Number of calves? ")
+        survey_total = input("Survey total? ")
+        sightability_correction_factor = input("Sightability correction factor? ")
+        extra_captives = input("Number of additional captives? ")
+        animals_removed = input("Number of animals removed prior to survey? ")
+        fall_population = input("Estimate of fall population? (R) ")
+        if fall_population == "" or not fall_population.isnumeric():
+            print("Field cannot be left blank. Please only enter numbers.")
+            continue
+        comment = input("Survey comment: ")  # need to put quotes around if ',' inside
+        if "," in comment:
+            comment = '"' + comment + '"'
+        method = input("Estimate method? ")
+        break
 
     new_data = [park_area, population_year, survey_year, survey_month, survey_day, species, unknown_age_sex_count, adult_male, adult_female, unknown_adult_count, yearling_count, calf_count, survey_total, sightability_correction_factor, extra_captives, animals_removed, fall_population, comment, method]
-    print(new_data)
     for i in range(len(new_data)):
         if new_data[i] == "":
             new_data[i] = None
         elif new_data[i].isnumeric():
             new_data[i] = int(new_data[i])
+    print(new_data)
+    # ['North', 2018, None, None, None, 'Elk', None, None, None, None, None, None, None, None, None, None, 100, 'asdf', 'Aerial']
     return new_data
 
 
 # --- Processing
 def dataValidationSurveyDate(variable, lower_bound, upper_bound):
     if variable == "":
-        variable = None
         return variable
     elif variable.isnumeric():
         variable = int(variable)
@@ -122,20 +130,6 @@ def dataValidationSurveyDate(variable, lower_bound, upper_bound):
             return getNewYearData()
     else:
         print("Please only enter numbers.")
-
-
-def dataValidationInts(variable):
-    if variable.isnumeric():
-        return int(variable)
-    else:
-        print("Please enter a valid number")
-        return getNewYearData()
-
-
-def dataValidationBlanks(variable):
-    if variable == "":
-        print("This field can't be left blank.")
-        return getNewYearData()
 
 
 def setupContent(data_list):
@@ -164,13 +158,23 @@ def setupContent(data_list):
                 estimate_method TEXT
             )
     ;""")
-    insertData(data_list)
+
+    for i in range(1, len(data_list)):
+        CURSOR.execute("""
+            INSERT INTO
+                populations
+            VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
+        ;""", data_list[i])
+
     CONNECTION.commit()
 
 
 def insertData(list_data):
     global CURSOR, CONNECTION
-    for i in range(1, len(list_data)):
+    for i in range(len(list_data)):
+        print(list_data[i])
         CURSOR.execute("""
             INSERT INTO
                 populations
@@ -178,6 +182,7 @@ def insertData(list_data):
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
         ;""", list_data[i])
+
     CONNECTION.commit()
 
 
@@ -217,13 +222,13 @@ def getPopulationsData(year):
     print(year_data)
 
     year_total = 0
-    # for i in range(len(year_data)):
-    #     year_total += year_data[i]
-    # return year_total
+    for i in range(len(year_data)):
+        for j in range(len(year_data[i])):
+            year_total += year_data[i][j]
+    return year_total
 
 
 # --- Outputs
-
 
 
 # --- variables
@@ -271,6 +276,7 @@ if __name__ == "__main__":
                 if int(GROWTH) == GROWTH:
                     GROWTH = int(GROWTH)
         elif CHOICE == 2:
+            print(NEW_DATA)
             insertData(NEW_DATA)
 
         # --- outputs
