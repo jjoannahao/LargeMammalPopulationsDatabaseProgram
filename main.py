@@ -263,8 +263,8 @@ if __name__ == "__main__":
             if SPECIES == 5:
                 START_POPULATION = getPopulationsData(START_YEAR)
                 END_POPULATION = getPopulationsData(END_YEAR)
-                POPULATION_CHANGE = abs(START_POPULATION - END_POPULATION)
-                TIME_CHANGE = abs(START_YEAR - END_YEAR)
+                POPULATION_CHANGE = START_POPULATION - END_POPULATION
+                TIME_CHANGE = START_YEAR - END_YEAR
                 GROWTH = POPULATION_CHANGE/TIME_CHANGE
             else:
                 SPECIES = SPECIES_OPTIONS[SPECIES]
