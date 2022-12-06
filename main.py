@@ -109,14 +109,31 @@ def getNewYearData():
         break
 
     new_data = [park_area, population_year, survey_year, survey_month, survey_day, species, unknown_age_sex_count, adult_male, adult_female, unknown_adult_count, yearling_count, calf_count, survey_total, sightability_correction_factor, extra_captives, animals_removed, fall_population, comment, method]
+
+    # for i in range(len(new_data)):
+    #     if new_data[i] == "" or new_data[i] == None:
+    #         new_data[i] = 0
+
     for i in range(len(new_data)):
         if new_data[i] == "":
             new_data[i] = None
         elif new_data[i].isnumeric():
             new_data[i] = int(new_data[i])
-    print(new_data)
     # ['North', 2018, None, None, None, 'Elk', None, None, None, None, None, None, None, None, None, None, 100, 'asdf', 'Aerial']
-    return new_data
+    print(len(new_data))
+    global CURSOR, CONNECTION
+    for i in range(len(new_data)):
+        print(new_data[i])
+        CURSOR.execute("""
+                INSERT INTO
+                    populations
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+            ;""", new_data)
+
+    CONNECTION.commit()
+
 
 
 # --- Processing
@@ -276,8 +293,9 @@ if __name__ == "__main__":
                 if int(GROWTH) == GROWTH:
                     GROWTH = int(GROWTH)
         elif CHOICE == 2:
-            print(NEW_DATA)
-            insertData(NEW_DATA)
+            # print(NEW_DATA)
+            # insertData(NEW_DATA)
+            pass
 
         # --- outputs
         if CHOICE == 1:
