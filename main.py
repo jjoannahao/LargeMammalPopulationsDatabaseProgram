@@ -49,7 +49,8 @@ def menu() -> int:
 Please choose an option:
 1. Search Population Growth
 2. Add new year data
-3. Exit
+3. Population distribution by sex 
+4. Exit
     """)
     return int(input("> "))
 
@@ -75,10 +76,14 @@ def getNewYearData():
         if park_area == "" or park_area.isnumeric() or park_area.capitalize() not in ("North", "South"):
             print("Field cannot be left blank. Please only enter the appropriate text. (North/South)")
             continue
+        break
+    while True:
         population_year = input("Population year? (R) ")
         if population_year == "" or not population_year.isnumeric():
             print("Field cannot be left blank. Please enter a valid number for this field.")
             continue
+        break
+    while True:
         survey_year = input("Survey year? ")
         if survey_year == "":
             pass
@@ -97,71 +102,95 @@ def getNewYearData():
         elif not survey_day.isnumeric() or not 1 <= int(survey_day) <= 31:
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         species = input("Species name? (R) ")
         if species == "" or species.isnumeric():
             print("Field cannot be left blank. Please only enter the appropriate text.")
             continue
         species = species.capitalize()
+        break
+    while True:
         unknown_age_sex_count = input("Number of animals with unknown age and sex? ")
         if unknown_age_sex_count == "":
             pass
         elif not unknown_age_sex_count.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         adult_male = input("Number of adult males? ")
         if adult_male == "":
             pass
         elif not adult_male.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         adult_female = input("Number of adult females? ")
         if adult_female == "":
             pass
         elif not adult_female.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         unknown_adult_count = input("Number of adults of unknown sex? ")
         if unknown_adult_count == "":
             pass
         elif not unknown_adult_count.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         yearling_count = input("Number of yearlings? ")
         if yearling_count == "":
             pass
         elif not yearling_count.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         calf_count = input("Number of calves? ")
         if calf_count == "":
             pass
         elif not calf_count.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         survey_total = input("Survey total? ")
         if survey_total == "":
             pass
         elif not survey_total.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         sightability_correction_factor = input("Sightability correction factor? ")
         if sightability_correction_factor == "":
             pass
         elif not sightability_correction_factor.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         extra_captives = input("Number of additional captives? ")
         if extra_captives == "":
             pass
         elif not extra_captives.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         animals_removed = input("Number of animals removed prior to survey? ")
         if animals_removed == "":
             pass
         elif not animals_removed.isnumeric():
             print("Please enter a valid number for this field.")
             continue
+        break
+    while True:
         fall_population = input("Estimate of fall population? ")
         if not fall_population.isnumeric():
             print("Please enter a valid number for this field.")
@@ -169,9 +198,9 @@ def getNewYearData():
         if not fall_population.isnumeric():
             print("Please only enter numbers.")
             continue
-        comment = input("Survey comment: ")
-        method = input("Estimate method? ")
         break
+    comment = input("Survey comment: ")
+    method = input("Estimate method? ")
 
     new_data = [park_area, population_year, survey_year, survey_month, survey_day, species, unknown_age_sex_count, adult_male, adult_female, unknown_adult_count, yearling_count, calf_count, survey_total, sightability_correction_factor, extra_captives, animals_removed, fall_population, comment, method]
 
@@ -183,7 +212,110 @@ def getNewYearData():
     return new_data
 
 
+def getPopulationDistributionInputs():
+    max_year = calcMaxYear()
+    while True:
+        year = input(f"What year would you like to search? (1937-{max_year}) ")
+        if not (year.isnumeric() and 1937 <= int(year) <= max_year):
+            print("Please enter a valid number.")
+            continue
+        break
+    while True:
+        species = input("What species would you like to search -- Bison (1), Elk (2), Moose (3), Deer (4)? ")
+        if not (species.isnumeric() and 1 <= int(species) <= 4):
+            print("Please select a valid option")
+            continue
+        break
+    return int(year), int(species)
+
+
 # --- Processing
+def getPopulationBySex(year, species):
+    """
+    retrieve adult population count for each sex and total population
+    :param year: int
+    :return: ints or Nones
+    """
+    species_conversions = {1: "Bison", 2: "Elk", 3: "Moose", 4: "Deer"}
+    species = species_conversions[species]
+
+    adult_males = CURSOR.execute("""
+        SELECT
+            adult_male_count
+        FROM
+            populations
+        WHERE
+            population_year = ?
+        AND
+            species = ?
+    ;""", [year, species]).fetchone()
+    if not adult_males == None:
+        adult_males = adult_males[0]
+
+    adult_females = CURSOR.execute("""
+        SELECT
+            adult_female_count
+        FROM
+            populations
+        WHERE
+            population_year = ?
+        AND
+            species = ?
+    ;""", [year, species]).fetchone()
+    if not adult_females == None:
+        adult_females = adult_females[0]
+
+    unknown_adults = CURSOR.execute("""
+        SELECT
+            adult_unknown_count
+        FROM
+            populations
+        WHERE
+            population_year = ?
+        AND
+            species = ?
+    ;""", [year, species]).fetchone()
+    if not unknown_adults == None:
+        unknown_adults = unknown_adults[0]
+    return adult_males, adult_females, unknown_adults
+
+
+def calcPopulationDistributionBySex(male, female, unknown):
+    messages = []
+    if male == None:
+        male = 0
+    if female == None:
+        female = 0
+
+    total = male + female
+    if total == 0:
+        messages.append("There is no population data by sex for the adult animals for this year.")
+    else:
+        male_proportion = male / total * 100
+        if male_proportion == 0:
+            messages.append("There was no male data for this year.")
+        else:
+            messages.append(f"The males made up {male_proportion:.2f}% of {total} adult(s), with {unknown} adult(s) of unknown sex.")
+
+        female_proportion = female / total * 100
+        if female_proportion == 0:
+            messages.append("There was no female data for this year.")
+        else:
+            messages.append(f"The females made up {female_proportion:.2f}% of {total} adults, with {unknown} adults of unknown sex.")
+    return messages
+
+
+def calcMaxYear():
+    global CURSOR
+    all_years = CURSOR.execute("""
+        SELECT
+            population_year
+        FROM
+            populations
+    ;""").fetchall()  # returns 2D array
+    return all_years[-1][0]
+
+
 def setupContent(data_list):
     global CURSOR, CONNECTION
     CURSOR.execute("""
@@ -252,6 +384,10 @@ def getSpeciesPopulationData(year, species):
     year_total = 0
     for i in range(len(year_data)):
         for j in range(len(year_data[i])):
+            if year_data[i][j] == None:
+                print(f">> Note: no data was recorded for {year}. Thus, the program is processing this year's population as 0.")
+                year_data[i] = list(year_data[i])
+                year_data[i][j] = 0
             year_total += year_data[i][j]
     return year_total
 
@@ -271,6 +407,10 @@ def getPopulationsData(year):
     year_total = 0
     for i in range(len(year_data)):
         for j in range(len(year_data[i])):
+            if year_data[i][j] == None:
+                print(f">> Note: no data was recorded for {year}. Thus, the program is processing this year's population as 0.")
+                year_data[i] = list(year_data[i])
+                year_data[i][j] = 0
             year_total += year_data[i][j]
     return year_total
 
@@ -297,6 +437,7 @@ if __name__ == "__main__":
         setupContent(CONTENT)
 
     while True:
+        print("--------------------------------------------------------------------------")
         print("Welcome to the Elk Island National Park Large Mammal population database! ")
         # --- inputs
         CHOICE = menu()
@@ -304,6 +445,8 @@ if __name__ == "__main__":
             START_YEAR, END_YEAR, SPECIES = getPopulationGrowthInputs()
         elif CHOICE == 2:
             NEW_DATA = getNewYearData()
+        elif CHOICE == 3:
+            YEAR, SPECIES = getPopulationDistributionInputs()
 
         # --- processing
         if CHOICE == 1:
@@ -326,6 +469,9 @@ if __name__ == "__main__":
                     GROWTH = int(GROWTH)
         elif CHOICE == 2:
             insertNewData(NEW_DATA)
+        elif CHOICE == 3:
+            ADULT_MALES, ADULT_FEMALES, UNKNOWN_ADULTS = getPopulationBySex(YEAR, SPECIES)
+            ALERTS = calcPopulationDistributionBySex(ADULT_MALES, ADULT_FEMALES, UNKNOWN_ADULTS)
 
         # --- outputs
         if CHOICE == 1:
@@ -333,6 +479,9 @@ if __name__ == "__main__":
         elif CHOICE == 2:
             print(f"Successfully added {NEW_DATA[1]} data.")
         elif CHOICE == 3:
+            for MESSAGE in ALERTS:
+                print(MESSAGE)
+        elif CHOICE == 4:
             print("Goodbye!")
             exit()
         else:
