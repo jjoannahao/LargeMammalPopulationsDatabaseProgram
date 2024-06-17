@@ -1,17 +1,6 @@
-# CSE2130-Project
+# CSE2130-Project: Large Mammal Populations Elk Island National Park
 
-Large Mammal Populations Elk Island National Park
+## Overview
+Program's purpose is to demonstrate understanding of working with databases and data within databases. 
 
-## Pseudocode from Document
-Need to have
-- for growth calc 
-  - population year
-    - -> population year
-  - population north (+south)
-    - -> area of park
-    - -> fall population estimate 
-  - animal species being calculated
-    - -> species name
-
-Ideas about importing data
-- delete columns not needed 
+Program cleans raw data from the Elk Island National Park regarding the population of large mammals. User can ask program to search population growth, add new data to database, or search a population distribution by sex.
